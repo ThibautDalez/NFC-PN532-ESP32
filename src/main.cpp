@@ -17,6 +17,8 @@ Based on readMifareClassicIrq.pde by Adafruit
 #include <Wire.h>
 #include <SPI.h>
 #include <Adafruit_PN532.h>
+#include "WiFi.h"
+#include "PubSubClient.h"
 
 static void startListeningToNFC();
 static void handleCardDetected();
@@ -30,6 +32,9 @@ long timeLastCardRead = 0;
 boolean readerDisabled = false;
 int irqCurr;
 int irqPrev;
+
+WiFiClient espClient;
+PubSubClient client(espClient);
 
 // valid_tags = 
 // 0x02 0x82 0x00 0x08 0x7B 0x2B 0xC3
@@ -68,6 +73,7 @@ void setup(void) {
 }
 
 void loop(void) {
+  
   if (readerDisabled) {
     if (millis() - timeLastCardRead > DELAY_BETWEEN_CARDS) {
       readerDisabled = false;
@@ -108,9 +114,15 @@ void handleCardDetected() {
       //Serial.println("Found an ISO14443A card");
       //Serial.print("  UID Length: ");Serial.print(uidLength, DEC);Serial.println(" bytes");
       //Serial.print("  UID Value: ");
-      Serial.print("Card ID HEX Value: ");
+      Serial.print("Card ID HEX Value: ");//hierachter doorsturen
+
+
+
       nfc.PrintHex(uid, uidLength);
       
+
+
+
       if (uidLength == 4)
       {
         // We probably have a Mifare Classic card ... 
@@ -124,8 +136,14 @@ void handleCardDetected() {
         //Serial.print("Seems to be a Mifare Classic card #");
         Serial.print("Card ID NUMERIC Value: ");
         Serial.println(cardid);
+        const char * mes = (const char *) String(cardid).c_str();
+        Serial.println(mes);
+        Serial.println("hey Sien kan iets");
+        client.publish("nieuwpoort/tags", mes);
       }
       Serial.println("");
+
+      
 
       timeLastCardRead = millis();
     }
